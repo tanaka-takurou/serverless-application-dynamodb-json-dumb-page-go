@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Application Dynamodb Json Dumb
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'ServerlessApplicationDynamodbJsonDumb'
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: Serverless-Application-Dynamodb-Json-Dumb
+    Description: 'This application return Json target DynamoDB-Table.'
+    Author: tanaka-takurou
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['ServerlessRepo']
+    HomePageUrl: https://github.com/tanaka-takurou/serverless-application-dynamodb-json-dumb-page-go
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/tanaka-takurou/serverless-application-dynamodb-json-dumb-page-go
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::HttpApi
+  MainFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: bin/
+      Handler: main
+      MemorySize: 256
+      Runtime: go1.x
+      Description: 'Front Function'
+      Policies:
+      - Statement:
+        - Effect: 'Allow'
+          Action:
+            - 'logs:*'
+          Resource: '*'
+        - Effect: 'Allow'
+          Action:
+            - 'lambda:*'
+          Resource: '*'
+        - Effect: 'Allow'
+          Action:
+            - 'apigateway:*'
+          Resource: '*'
+        - Effect: 'Allow'
+          Action:
+            - 'dynamodb:*'
+          Resource: '*'
+      Events:
+        FrontRootApi:
+          Type: HttpApi
+          Properties:
+            Path: '/'
+            Method: get
+            ApiId: !Ref FrontPageApi
+        FrontProxyApi:
+          Type: HttpApi
+          Properties:
+            Path: '/{proxy+}'
+            Method: get
+            ApiId: !Ref FrontPageApi
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+  FrontPageApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref MainFunction
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+  APIURI:
+    Value: !Join [ '', [ 'https://', !Ref FrontPageApi, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/'] ]
