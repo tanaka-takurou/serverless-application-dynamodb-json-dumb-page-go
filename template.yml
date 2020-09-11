@@ -31,24 +31,7 @@ Resources:
       MemorySize: 256
       Runtime: go1.x
       Description: 'Front Function'
-      Policies:
-      - Statement:
-        - Effect: 'Allow'
-          Action:
-            - 'logs:*'
-          Resource: '*'
-        - Effect: 'Allow'
-          Action:
-            - 'lambda:*'
-          Resource: '*'
-        - Effect: 'Allow'
-          Action:
-            - 'apigateway:*'
-          Resource: '*'
-        - Effect: 'Allow'
-          Action:
-            - 'dynamodb:*'
-          Resource: '*'
+      Policies: AmazonDynamoDBFullAccess
       Events:
         FrontRootApi:
           Type: HttpApi
