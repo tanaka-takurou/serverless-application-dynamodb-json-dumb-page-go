@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
 )
 
@@ -90,16 +89,8 @@ func getTableContents(ctx context.Context, tableName string)(interface{}, error)
 	if dynamodbClient == nil {
 		dynamodbClient = dynamodb.New(cfg)
 	}
-	expr, err := expression.NewBuilder().WithFilter(expression.NotEqual(expression.Name("status"), expression.Value(-1))).Build()
-	if err != nil {
-		return nil, err
-	}
 	params := &dynamodb.ScanInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          expr.Filter(),
-		ProjectionExpression:      expr.Projection(),
-		TableName:                 aws.String(tableName),
+		TableName: aws.String(tableName),
 	}
 	result, err := dynamodbClient.ScanRequest(params).Send(ctx)
 	if err != nil {
