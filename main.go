@@ -11,12 +11,10 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/dynamodbattribute"
 )
 
-var cfg aws.Config
 var dynamodbClient *dynamodb.Client
 
 func HandleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
@@ -76,46 +74,40 @@ func HandleRequest(ctx context.Context, request events.APIGatewayV2HTTPRequest) 
 
 func getTableNameList(ctx context.Context)([]string, error) {
 	if dynamodbClient == nil {
-		dynamodbClient = dynamodb.New(cfg)
+		dynamodbClient = dynamodb.NewFromConfig(getConfig(ctx))
 	}
-	result, err := dynamodbClient.ListTablesRequest(&dynamodb.ListTablesInput{}).Send(ctx)
+	result, err := dynamodbClient.ListTables(ctx, &dynamodb.ListTablesInput{})
 	if err != nil {
 		return nil, err
 	}
-	return result.ListTablesOutput.TableNames, nil
+	return result.TableNames, nil
 }
 
 func getTableContents(ctx context.Context, tableName string)(interface{}, error) {
 	if dynamodbClient == nil {
-		dynamodbClient = dynamodb.New(cfg)
+		dynamodbClient = dynamodb.NewFromConfig(getConfig(ctx))
 	}
 	params := &dynamodb.ScanInput{
 		TableName: aws.String(tableName),
 	}
-	result, err := dynamodbClient.ScanRequest(params).Send(ctx)
+	result, err := dynamodbClient.Scan(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	var tableContents []interface{}
-	for _, i := range result.ScanOutput.Items {
-		var item interface{}
-		err := dynamodbattribute.UnmarshalMap(i, &item)
-		if err != nil {
-			log.Print(err)
-		} else {
-			tableContents = append(tableContents, item)
-		}
+	for _, i := range result.Items {
+		tableContents = append(tableContents, i)
 	}
 	return tableContents, nil
 }
 
-func init() {
+func getConfig(ctx context.Context) aws.Config {
 	var err error
-	cfg, err = external.LoadDefaultAWSConfig()
-	cfg.Region = os.Getenv("REGION")
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(os.Getenv("REGION")))
 	if err != nil {
 		log.Print(err)
 	}
+	return cfg
 }
 
 func main() {
