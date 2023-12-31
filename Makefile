@@ -6,7 +6,7 @@ clean:
 	rm -rfv bin
 
 build:
-	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/main
+	GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o bin/bootstrap
 
 deploy:
 	sam package --output-template-file "${root}"/packaged.yml --s3-bucket "${bucket}"
